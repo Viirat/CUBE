@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUBE - Premium Rubik's Cube Solver Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Google OAuth Script -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Google Authenticator Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <!-- Background Video -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="175733-854057991.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">CUBE</span>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn login-btn" onclick="showLogin()">Login</button>
+                <button class="nav-btn signup-btn" onclick="showSignup()">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="hero-section">
+            <div class="tagline">
+                <h1>Solve the Cube.</h1>
+                <h1>Solve the Challenge.</h1>
+                <p class="premium-subtitle">Experience the future of puzzle solving</p>
+                <button class="start-solving-btn" onclick="startSolving()">Start Solving</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Description Section -->
+    <section class="description-section">
+        <div class="description-container">
+            <div class="description-content">
+                <h2>About CUBE</h2>
+                <p class="description-text">
+                    CUBE is a premium Rubik's Cube solving platform designed for enthusiasts, beginners, and professionals alike. 
+                    Our advanced algorithms provide step-by-step solutions to help you master the art of cube solving.
+                </p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Smart Solutions</h3>
+                        <p>Advanced algorithms that provide optimal solving paths for any cube state</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Easy Input</h3>
+                        <p>Manual input or photo upload - choose your preferred method to input cube state</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Instant Results</h3>
+                        <p>Get solutions in seconds with our optimized solving engine</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3>Premium Design</h3>
+                        <p>Beautiful, modern interface that makes solving cubes a pleasure</p>
+                    </div>
+                </div>
+                
+                <div class="cta-section">
+                    <h3>Ready to Solve?</h3>
+                    <p>Join thousands of cube enthusiasts who trust CUBE for their solving needs</p>
+                    <button class="cta-btn" onclick="startSolving()">Start Solving Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cube Solver Section -->
+    <div id="cube-solver" class="cube-solver-section" style="display: none;">
+        <div class="solver-container">
+            <div class="solver-header">
+                <h2>Cube Solver</h2>
+                <button class="close-solver-btn" onclick="closeSolver()">&times;</button>
+            </div>
+            
+            <div class="solver-content">
+                <div class="cube-input-section">
+                    <h3>Input Your Cube State</h3>
+                    <div class="input-methods">
+                        <div class="method-tabs">
+                            <button class="tab-btn active" onclick="switchTab('manual')">Manual Input</button>
+                            <button class="tab-btn" onclick="switchTab('photo')">Photo Upload</button>
+                        </div>
+                        
+                        <div id="manual-input" class="input-method active">
+                            <div class="cube-face-input">
+                                <h4>Front Face</h4>
+                                <div class="color-grid">
+                                    <div class="color-cell" data-color="white" onclick="selectColor(this, 'white')"></div>
+                                    <div class="color-cell" data-color="yellow" onclick="selectColor(this, 'yellow')"></div>
+                                    <div class="color-cell" data-color="red" onclick="selectColor(this, 'red')"></div>
+                                    <div class="color-cell" data-color="orange" onclick="selectColor(this, 'orange')"></div>
+                                    <div class="color-cell" data-color="blue" onclick="selectColor(this, 'blue')"></div>
+                                    <div class="color-cell" data-color="green" onclick="selectColor(this, 'green')"></div>
+                                </div>
+                                <div class="face-grid" id="front-face">
+                                    <div class="face-cell" data-position="0" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="1" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="2" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="3" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="4" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="5" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="6" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="7" onclick="selectCell(this)"></div>
+                                    <div class="face-cell" data-position="8" onclick="selectCell(this)"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="photo-input" class="input-method">
+                            <div class="photo-upload">
+                                <div class="upload-area" onclick="document.getElementById('photo-input-file').click()">
+                                    <svg viewBox="0 0 24 24" width="48" height="48">
+                                        <path fill="currentColor" d="M19,4H5A3,3 0 0,0 2,7V17A3,3 0 0,0 5,20H19A3,3 0 0,0 22,17V7A3,3 0 0,0 19,4M19,18H5A1,1 0 0,1 4,17V7A1,1 0 0,1 5,6H19A1,1 0 0,1 20,7V17A1,1 0 0,1 19,18M17,8A2,2 0 0,0 15,6A2,2 0 0,0 13,8A2,2 0 0,0 15,10A2,2 0 0,0 17,8M17,17H5L8,13L10,15L13,11L17,17Z"/>
+                                    </svg>
+                                    <p>Click to upload cube photo</p>
+                                    <input type="file" id="photo-input-file" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="solve-section">
+                    <button class="solve-btn" onclick="solveCube()">Solve Cube</button>
+                    <div id="solution-display" class="solution-display" style="display: none;">
+                        <h4>Solution Steps</h4>
+                        <div id="solution-steps"></div>
+                        <div class="solution-controls">
+                            <button onclick="replaySolution()">Replay Solution</button>
+                            <button onclick="closeSolution()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Welcome Back</h2>
+                <button class="close-btn" onclick="closeModal('login-modal')">&times;</button>
+            </div>
+            <form class="auth-form" id="login-form">
+                <div class="input-group">
+                    <input type="email" id="login-email" required>
+                    <label for="login-email">Email</label>
+                    <div class="input-line"></div>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="login-password" required>
+                    <label for="login-password">Password</label>
+                    <div class="input-line"></div>
+                </div>
+                <button type="submit" class="submit-btn">Login</button>
+                <div class="social-login">
+                    <p>Or continue with</p>
+                    <div class="social-buttons">
+                        <div id="g_id_onload_login"
+                             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                             data-context="signin"
+                             data-ux_mode="popup"
+                             data-callback="handleGoogleSignIn"
+                             data-auto_prompt="false">
+                        </div>
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-shape="rectangular"
+                             data-theme="outline"
+                             data-text="signin_with"
+                             data-size="large"
+                             data-logo_alignment="left">
+                        </div>
+                        <button type="button" class="social-btn github-btn">
+                            <svg viewBox="0 0 24 24" width="24" height="24">
+                                <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            GitHub
+                        </button>
+                    </div>
+                </div>
+                <p class="form-footer">
+                    Don't have an account? <a href="#" onclick="switchToSignup()">Sign up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signup-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Join CUBE</h2>
+                <button class="close-btn" onclick="closeModal('signup-modal')">&times;</button>
+            </div>
+            <form class="auth-form" id="signup-form">
+                <div class="input-group">
+                    <input type="text" id="signup-name" required>
+                    <label for="signup-name">Full Name</label>
+                    <div class="input-line"></div>
+                </div>
+                <div class="input-group">
+                    <input type="email" id="signup-email" required>
+                    <label for="signup-email">Email</label>
+                    <div class="input-line"></div>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="signup-password" required>
+                    <label for="signup-password">Password</label>
+                    <div class="input-line"></div>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="signup-confirm-password" required>
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <div class="input-line"></div>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+                <div class="social-login">
+                    <p>Or continue with</p>
+                    <div class="social-buttons">
+                        <div id="g_id_onload_signup"
+                             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                             data-context="signup"
+                             data-ux_mode="popup"
+                             data-callback="handleGoogleSignUp"
+                             data-auto_prompt="false">
+                        </div>
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-shape="rectangular"
+                             data-theme="outline"
+                             data-text="signup_with"
+                             data-size="large"
+                             data-logo_alignment="left">
+                        </div>
+                        <button type="button" class="social-btn github-btn">
+                            <svg viewBox="0 0 24 24" width="24" height="24">
+                                <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            GitHub
+                        </button>
+                    </div>
+                </div>
+                <p class="form-footer">
+                    Already have an account? <a href="#" onclick="switchToLogin()">Login</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2FA Setup Modal -->
+    <div id="twofa-setup-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Set Up Two-Factor Authentication</h2>
+                <button class="close-btn" onclick="closeModal('twofa-setup-modal')">&times;</button>
+            </div>
+            <div class="twofa-setup-content">
+                <div class="setup-step" id="step-1">
+                    <h3>Step 1: Scan QR Code</h3>
+                    <p>Scan this QR code with your Google Authenticator app:</p>
+                    <div id="qr-code-container" class="qr-code-container"></div>
+                    <div class="manual-key">
+                        <p><strong>Manual Entry Key:</strong></p>
+                        <code id="secret-key"></code>
+                        <button class="copy-btn" onclick="copySecretKey()">Copy</button>
+                    </div>
+                    <button class="submit-btn" onclick="nextStep()">Next Step</button>
+                </div>
+                
+                <div class="setup-step" id="step-2" style="display: none;">
+                    <h3>Step 2: Verify Setup</h3>
+                    <p>Enter the 6-digit code from your Google Authenticator app:</p>
+                    <div class="verification-input">
+                        <input type="text" id="verification-code" maxlength="6" placeholder="000000" pattern="[0-9]{6}">
+                        <button class="submit-btn" onclick="verifyTwoFA()">Verify</button>
+                    </div>
+                    <div class="verification-status" id="verification-status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2FA Verification Modal -->
+    <div id="twofa-verify-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Two-Factor Authentication</h2>
+                <button class="close-btn" onclick="closeModal('twofa-verify-modal')">&times;</button>
+            </div>
+            <div class="twofa-verify-content">
+                <p>Enter the 6-digit code from your Google Authenticator app:</p>
+                <div class="verification-input">
+                    <input type="text" id="login-verification-code" maxlength="6" placeholder="000000" pattern="[0-9]{6}">
+                    <button class="submit-btn" onclick="verifyLoginTwoFA()">Verify</button>
+                </div>
+                <div class="verification-status" id="login-verification-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

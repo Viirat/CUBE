@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Authenticator 2FA Test - CUBE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .manual-key {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .manual-key code {
+            display: block;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #1e293b;
+            margin: 10px 0;
+            border: 1px solid #cbd5e1;
+            word-break: break-all;
+        }
+        .verification-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .verification-input input {
+            width: 200px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        .test-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Google Authenticator 2FA Test</h1>
+        <p>This page helps you test the Google Authenticator (TOTP) integration.</p>
+        
+        <div id="status" class="status info">
+            Ready to test 2FA functionality...
+        </div>
+        
+        <div class="test-section">
+            <h3>Step 1: Generate Test Secret</h3>
+            <button onclick="generateTestSecret()">Generate New Secret</button>
+            <div id="secret-display" style="display: none;">
+                <div class="manual-key">
+                    <p><strong>Test Secret Key:</strong></p>
+                    <code id="test-secret"></code>
+                </div>
+                <div id="qr-code-container"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Step 2: Test Code Generation</h3>
+            <button onclick="generateCurrentCode()">Generate Current Code</button>
+            <div id="code-display" style="display: none;">
+                <p><strong>Current TOTP Code:</strong></p>
+                <code id="current-code" style="font-size: 1.5rem; padding: 10px; background: #f8f9fa;"></code>
+                <p><small>This code changes every 30 seconds</small></p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Step 3: Test Code Verification</h3>
+            <div class="verification-input">
+                <input type="text" id="test-code-input" maxlength="6" placeholder="000000" pattern="[0-9]{6}">
+                <button onclick="verifyTestCode()">Verify Code</button>
+            </div>
+            <div id="verification-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Step 4: Test Time Tolerance</h3>
+            <button onclick="testTimeTolerance()">Test Time Tolerance (±90 seconds)</button>
+            <div id="tolerance-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Configuration Status</h3>
+            <ul id="config-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let testSecret = null;
+        let codeInterval = null;
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function generateTOTPSecret() {
+            const secret = CryptoJS.lib.WordArray.random(20).toString();
+            const base32Secret = base32Encode(secret);
+            return base32Secret;
+        }
+        
+        function base32Encode(str) {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = 0;
+            let value = 0;
+            let output = '';
+            
+            for (let i = 0; i < str.length; i++) {
+                value = (value << 8) | str.charCodeAt(i);
+                bits += 8;
+                
+                while (bits >= 5) {
+                    output += alphabet[(value >>> (bits - 5)) & 31];
+                    bits -= 5;
+                }
+            }
+            
+            if (bits > 0) {
+                output += alphabet[(value << (5 - bits)) & 31];
+            }
+            
+            return output;
+        }
+        
+        function generateTOTP(secret, time = Math.floor(Date.now() / 30000)) {
+            const key = base32Decode(secret);
+            const message = new ArrayBuffer(8);
+            const view = new DataView(message);
+            view.setBigUint64(0, BigInt(time), false);
+            
+            const hmac = CryptoJS.HmacSHA1(CryptoJS.lib.WordArray.create(message), key);
+            const hash = hmac.toString(CryptoJS.enc.Hex);
+            
+            const offset = parseInt(hash.slice(-1), 16) & 0xf;
+            const code = ((parseInt(hash.slice(offset, offset + 2), 16) & 0x7f) << 24) |
+                         ((parseInt(hash.slice(offset + 2, offset + 4), 16) & 0xff) << 16) |
+                         ((parseInt(hash.slice(offset + 4, offset + 6), 16) & 0xff) << 8) |
+                         (parseInt(hash.slice(offset + 6, offset + 8), 16) & 0xff);
+            
+            return (code % 1000000).toString().padStart(6, '0');
+        }
+        
+        function base32Decode(str) {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = 0;
+            let value = 0;
+            let output = '';
+            
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charAt(i).toUpperCase();
+                const index = alphabet.indexOf(char);
+                if (index === -1) continue;
+                
+                value = (value << 5) | index;
+                bits += 5;
+                
+                while (bits >= 8) {
+                    output += String.fromCharCode((value >>> (bits - 8)) & 255);
+                    bits -= 8;
+                }
+            }
+            
+            return output;
+        }
+        
+        function verifyTOTP(secret, code) {
+            const currentTime = Math.floor(Date.now() / 30000);
+            
+            // Check current time and ±1 time step (90 seconds total)
+            for (let i = -1; i <= 1; i++) {
+                const expectedCode = generateTOTP(secret, currentTime + i);
+                if (code === expectedCode) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        function generateTestSecret() {
+            testSecret = generateTOTPSecret();
+            
+            // Generate QR code
+            const qrCodeUrl = `otpauth://totp/CUBE:test@example.com?secret=${testSecret}&issuer=CUBE`;
+            
+            const qrContainer = document.getElementById('qr-code-container');
+            qrContainer.innerHTML = '';
+            
+            new QRCode(qrContainer, {
+                text: qrCodeUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            document.getElementById('test-secret').textContent = testSecret;
+            document.getElementById('secret-display').style.display = 'block';
+            
+            updateStatus('Test secret generated successfully!', 'success');
+        }
+        
+        function generateCurrentCode() {
+            if (!testSecret) {
+                updateStatus('Please generate a test secret first.', 'error');
+                return;
+            }
+            
+            const code = generateTOTP(testSecret);
+            document.getElementById('current-code').textContent = code;
+            document.getElementById('code-display').style.display = 'block';
+            
+            // Update code every 30 seconds
+            if (codeInterval) clearInterval(codeInterval);
+            codeInterval = setInterval(() => {
+                const newCode = generateTOTP(testSecret);
+                document.getElementById('current-code').textContent = newCode;
+            }, 30000);
+            
+            updateStatus('Current code generated and will update every 30 seconds.', 'success');
+        }
+        
+        function verifyTestCode() {
+            const code = document.getElementById('test-code-input').value;
+            const resultDiv = document.getElementById('verification-result');
+            
+            if (!testSecret) {
+                resultDiv.innerHTML = '<div class="status error">Please generate a test secret first.</div>';
+                return;
+            }
+            
+            if (!code || code.length !== 6) {
+                resultDiv.innerHTML = '<div class="status error">Please enter a 6-digit code.</div>';
+                return;
+            }
+            
+            const isValid = verifyTOTP(testSecret, code);
+            
+            if (isValid) {
+                resultDiv.innerHTML = '<div class="status success">✅ Code is valid!</div>';
+            } else {
+                resultDiv.innerHTML = '<div class="status error">❌ Code is invalid.</div>';
+            }
+        }
+        
+        function testTimeTolerance() {
+            if (!testSecret) {
+                updateStatus('Please generate a test secret first.', 'error');
+                return;
+            }
+            
+            const currentTime = Math.floor(Date.now() / 30000);
+            const toleranceResult = document.getElementById('tolerance-result');
+            let results = [];
+            
+            // Test codes for current time and ±2 time steps
+            for (let i = -2; i <= 2; i++) {
+                const timeStep = currentTime + i;
+                const code = generateTOTP(testSecret, timeStep);
+                const timeOffset = i * 30;
+                results.push(`Time ${timeOffset > 0 ? '+' : ''}${timeOffset}s: ${code}`);
+            }
+            
+            toleranceResult.innerHTML = `
+                <div class="status info">
+                    <strong>Time Tolerance Test Results:</strong><br>
+                    ${results.join('<br>')}
+                </div>
+            `;
+        }
+        
+        function checkConfiguration() {
+            const configList = document.getElementById('config-list');
+            configList.innerHTML = '';
+            
+            const checks = [
+                {
+                    name: 'QRCode Library Loaded',
+                    check: () => typeof QRCode !== 'undefined',
+                    message: 'QRCode library is available'
+                },
+                {
+                    name: 'CryptoJS Library Loaded',
+                    check: () => typeof CryptoJS !== 'undefined',
+                    message: 'CryptoJS library is available'
+                },
+                {
+                    name: 'TOTP Functions Available',
+                    check: () => typeof generateTOTP !== 'undefined' && typeof verifyTOTP !== 'undefined',
+                    message: 'TOTP functions are working'
+                },
+                {
+                    name: 'Test Secret Generated',
+                    check: () => testSecret !== null,
+                    message: 'Test secret is ready'
+                }
+            ];
+            
+            checks.forEach(check => {
+                const li = document.createElement('li');
+                const isPassed = check.check();
+                li.innerHTML = `${check.name}: <strong>${isPassed ? '✅ PASS' : '❌ FAIL'}</strong>`;
+                if (isPassed) {
+                    li.innerHTML += ` - ${check.message}`;
+                }
+                configList.appendChild(li);
+            });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                checkConfiguration();
+                updateStatus('Ready to test Google Authenticator 2FA functionality.', 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 
